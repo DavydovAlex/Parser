@@ -51,7 +51,7 @@ namespace Classes
         /// </summary>
         public const string P_CLOSING_TAG_NAME = @"(?<=<[\s]*?)/[a-zA-Z0-9]*?(?=(>|[\s]*?>))";
 
-        public const string P_VALUE = @"(?<=<[^>]+?>)[\s\S]*?";
+        public const string P_VALUE = @"(?<=<[\s\S]*?>)[\s\S]*";
 
         #endregion
 
@@ -175,7 +175,11 @@ namespace Classes
             {
                 matchedString = GetMatch(html, pattern, currentPosition);
                 if (matchedString == "")
+                {
+                    result.Add(html.Substring(currentPosition));
                     break;
+                }
+                    
                 currentPosition += matchedString.Length;
                 result.Add(matchedString);
 
@@ -183,7 +187,18 @@ namespace Classes
             return result;
         }
 
-   
+        public List<string> RemoveAtributes(List<string> splitedHtml)
+        {
+            List<string> result = new List<string>();
+            string pattern = @"(?<=<[\s]*?[a-zA-Z0-9]*?\s)[^>]*?(?=(>|\>))";
+            foreach(string elem in splitedHtml)
+            {
+                string buf = Regex.Replace(elem, pattern, "");
+                result.Add(buf);
+            }
+            return result;
+        }
+
         /// <summary>
         /// Ищет совпадение по заданному паттерну
         /// </summary>
@@ -259,13 +274,85 @@ namespace Classes
             else if (Regex.IsMatch(tagToTag, P_DOCTYPE))
                 result = 3;
             if (result == -1)
-                throw new Exception("Can't define tag status");
+                throw new Exception("Can't define tag status for:\n"+tagToTag);
 
             return result;
         }
 
+        /// <summary>
+        /// Переписать без использования splitedHtml (подумать) т.к. этот список создается не в одной функции(наверно замедлит работу)
+        /// 
+        /// </summary>
+        /// <param name="html"></param>
+        /// <returns></returns>
+        public List<Tag> FindSingleTagsT(string html)
+        {
+            List<string> splitedHtml = Split(html);
+            Stack<Tag> stack = new Stack<Tag>();
+            List<Tag> tags = new List<Tag>();//Список одиночных тегов
+            Tag tag = new Tag();
+            int pos = 0;
+            foreach (string str in splitedHtml)
+            {
+                
+                tag = FillTagAttributes(str);
+                tag.Position = pos;
 
 
+                if (tag.Status == 2 || tag.Status == 3)
+                {
+                    pos++;
+                    continue;
+                }
+                    
+
+                if (stack.Count != 0)
+                {
+                    //Удалить элемент из верхушки если пришедший тег имеет такое же имя, но является закрывающим
+                    if (stack.Peek().Name == tag.Name && stack.Peek().Status == 1 && tag.Status == 0)
+                    {
+                        stack.Pop();
+                    }
+                    //Если пришедший тег закрывающий и имеет другое имя, значит тег в стеке одиночный               
+                    else if (stack.Peek().Name != tag.Name && tag.Status == 0)
+                    {
+
+                        //Проверяем в цикле, так как может быть несколько вложенных тегов и они не удалятся
+                        while (stack.Peek().Name != tag.Name)
+                        {
+                            
+                                tags.Add(stack.Peek());
+                                stack.Pop();
+                            
+                        }
+                           
+                        if (stack.Peek().Name == tag.Name)
+                            stack.Pop();
+                        else
+                            stack.Push(tag);
+
+                    }
+                    else
+                        stack.Push(tag);
+                }
+                else
+                    stack.Push(tag);
+
+                pos++;
+            }
+            return tags;
+        }
+
+
+
+
+
+        /// <summary>
+        /// Removing code block corresponds to pattern
+        /// </summary>
+        /// <param name="changedHtml"></param>
+        /// <param name="pattern"></param>
+        /// <returns></returns>
         public MatchCollection RemoveBlock(ref string changedHtml,string pattern)
         {
             MatchCollection result = GetMatches(changedHtml, pattern);
@@ -277,13 +364,16 @@ namespace Classes
         static MatchCollection GetMatches(string html,string pattern,int startpos=0)
         {
             Regex regex = new Regex(pattern);
-
             MatchCollection result = regex.Matches(html, startpos);
             return result;
         }
 
 
-
+        /// <summary>
+        /// Rewrite
+        /// </summary>
+        /// <param name="html"></param>
+        /// <returns></returns>
         public Encoding GetEncoding(string html)
         {
             string head = GetMatch(html, GetPattern_PAIRED_TAG("head"));/*Знаем что Head только один берем первый элемент и сразу забираем значение*/
@@ -296,9 +386,11 @@ namespace Classes
             return result;
 
         }
+
+
         public static string GetPattern_PAIRED_TAG(string tagName)
         {
-            string pattern = @"<\s*?" + tagName + @"[^>]*?>[\s\S]*?</\s*?" + tagName + @"\s*?>"; //@"<(\s)*" + tagName + @".*>(.|\n)*?</(\s)*" + tagName + @"(\s)*>";
+            string pattern = @"<\s*?" + tagName + @"[^>]*?>[\s\S]*?</\s*?" + tagName + @"\s*?>"; 
             return pattern;
         }
 
@@ -314,7 +406,7 @@ namespace Classes
         {
             List<string> splitedHtml = Split(html);
             Stack<Tag> stack = new Stack<Tag>();         
-            List<Tag> tags = new List<Tag>();
+            List<Tag> tags = new List<Tag>();//Список одиночных тегов
             Tag tag = new Tag();
             int pos = 0;
             foreach (string str in splitedHtml)
