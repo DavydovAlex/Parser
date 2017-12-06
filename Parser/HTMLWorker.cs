@@ -50,13 +50,14 @@ namespace Classes
         }
     #endregion
 
+
         /// <summary>
-        /// Read file 
+        /// Read local file 
         /// </summary>
         /// <param name="fileName"> Path to Html file</param>
         /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        public string ReadFile(string path,Encoding encoding)
+        private string ReadFile(string path,Encoding encoding)
         {
             string result;
             using (StreamReader stream = new StreamReader(path, encoding))
@@ -65,6 +66,8 @@ namespace Classes
             }
             return result;                    
         }
+
+
         /// <summary>
         /// Get Html frol local file or via Net
         /// </summary>
@@ -85,6 +88,14 @@ namespace Classes
             }
             return result;
         }
+
+
+        /// <summary>
+        /// Get Html frol local file or via Net
+        /// </summary>
+        /// <param name="URI"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
         public string GetHtml(Uri URI, Encoding encoding)
         {
             string result;
@@ -98,13 +109,15 @@ namespace Classes
             }
             return result;
         }
+
+
         /// <summary>
         /// Get string containing Html code loaded from site
         /// </summary>
-        /// <param name="URL">Source Html code URI</param>
+        /// <param name="URL">URI</param>
         /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        public string GetHtmlViaInternet(string URI,Encoding encoding)
+        private string GetHtmlViaInternet(string URI,Encoding encoding)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URI);
             request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36";
@@ -118,18 +131,20 @@ namespace Classes
             }
             return result;
         }
+
+
         /// <summary>
-        /// 
+        /// Get string containing Html code loaded from site
         /// </summary>
-        /// <param name="URL"></param>
-        /// <param name="encoding"></param>
+        /// <param name="URL">URI</param>
+        /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        public string GetHtmlViaInternet(Uri URI, Encoding encoding)
+        private string GetHtmlViaInternet(Uri URI, Encoding encoding)
         {
-            string strURI = URI.AbsoluteUri;
-            string result = GetHtmlViaInternet(strURI, encoding);
+            string result = GetHtmlViaInternet(URI.AbsoluteUri, encoding);
             return result;
         }
+
 
         public void ConvertHtmlToXml(string Html)
         {
