@@ -24,6 +24,11 @@ namespace Parser
             {
                 Uri e = new Uri(@"https://www.google.com");//@"D:\1.txt"   @"https://www.google.com"   @"D:\chm\1234.htm"
                 string str = wrk.GetHtml(e, Encoding.UTF8);
+                wrk.RemoveBlock(ref str, HTMLWorker.P_SCRIPT);
+                wrk.RemoveBlock(ref str, HTMLWorker.GetPattern_PAIRED_TAG("style"));
+                wrk.RemoveBlock(ref str, HTMLWorker.GetPattern_PAIRED_TAG("head"));
+                List<string> dev = wrk.Split(str);
+                List<Tag> dcv = wrk.GetTagList(str);
                 
             }
             catch (Exception ex)

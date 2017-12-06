@@ -34,7 +34,7 @@ namespace Classes
         public const string P_HTML_FROM_TAG_TO_TAG= @"<[\s\S]*?>[\s\S]*?(?=<[\s\S]*?>)";
 
 
-        public const string P_TAG_NAME = @"(?<=<[\s/]*?)[a-zA-Z0-9]*?(?=(>| [\s\S]*?>))";
+        public const string P_TAG_NAME = @"(?<=<[\s/!]*?)[a-zA-Z0-9]*?(?=(>| [\s\S]*?>))";
 
         /// <summary>
         /// Get tag with format &lt;tag /&gt;
@@ -200,14 +200,17 @@ namespace Classes
 
 
 
-        private List<Tag> GetTagList(string html)
+        public List<Tag> GetTagList(string html)
         {
             List<string> splitedHtml = Split(html);
             List<Tag> splitedToTags = new List<Tag>();
             int tagPos = 0;
+            Tag bufTag = new Tag();
             foreach (string elem in splitedHtml)
             {
-                splitedToTags.Add(FillTagAttributes(elem));
+                bufTag = FillTagAttributes(elem);
+                bufTag.Position = tagPos;
+                splitedToTags.Add(bufTag);
                 tagPos++;
             }
             return splitedToTags;
@@ -221,10 +224,12 @@ namespace Classes
         /// <returns></returns>
         private Tag FillTagAttributes(string tagToTag)
         {
-            Tag tag = new Tag();
-            tag.Name = GetMatch(tagToTag, P_TAG_NAME);
-            tag.Status = GetTagStatus(tagToTag);
-            tag.Value = GetMatch(tagToTag, P_VALUE);
+            Tag tag = new Tag
+            {
+                Name = GetMatch(tagToTag, P_TAG_NAME),
+                Status = GetTagStatus(tagToTag),
+                Value = GetMatch(tagToTag, P_VALUE)
+            };
             return tag;
         }
 
@@ -237,6 +242,7 @@ namespace Classes
         /// 0 - закрывающий тег </tag>;
         /// 1 - открывающий тег <tag>;
         /// 2 - одиночный закрывающийся тег <tag />.
+        /// 3 - <!doctype ....>
         /// </remarks>
         /// <param name="tagToTag"></param>
         /// <returns></returns>
@@ -249,7 +255,9 @@ namespace Classes
             else if (Regex.IsMatch(tagToTag, P_OPEN_TAG_NAME))//формат <tag>
                 result = 1;
             else if (Regex.IsMatch(tagToTag, P_CLOSING_TAG_NAME)) //формат </tag>
-                 result = 0;
+                result = 0;
+            else if (Regex.IsMatch(tagToTag, P_DOCTYPE))
+                result = 3;
             if (result == -1)
                 throw new Exception("Can't define tag status");
 
@@ -257,46 +265,16 @@ namespace Classes
         }
 
 
-        public static Match DOCKTYPE(string html)
-        {
-            string pattern = P_DOCTYPE;
-            Regex reg = new Regex(pattern);
-            Match result = reg.Match(html);
-            return result;
-        }
-        public static void ChangeCase(ref string html,string pattern,bool Case)
-        {
-            //Regex reg = new Regex(pattern);
-            //Match result = reg.Match(html);
-           
-            html=html.Replace("doctype", "DOCTYPE");
 
-        }
-        /// <summary>
-        ///Rewrite or remove this function
-        /// </summary>
-        /// <param name="html"></param>
-        /// <returns></returns>
-        public static MatchCollection SeparateByTags(string html)
+        public MatchCollection RemoveBlock(ref string changedHtml,string pattern)
         {
-            MatchCollection commnets = RemoveElement(ref html,P_COMMENT);
-            MatchCollection scripts = RemoveElement(ref html, GetPattern_PAIRED_TAG("script"));
-            MatchCollection styles = RemoveElement(ref html, GetPattern_PAIRED_TAG("style"));
-            string pattern = @"<(.|\n)*?>(.)";
-            Regex regex = new Regex(pattern);
-            MatchCollection result = regex.Matches(html);
-            return result;
-        }
-
-        public static MatchCollection RemoveElement(ref string changedHtml,string pattern)
-        {
-            MatchCollection result = GetElements(changedHtml, pattern);
+            MatchCollection result = GetMatches(changedHtml, pattern);
             changedHtml = Regex.Replace(changedHtml, pattern,"");
 
             return result;
         }
 
-        static MatchCollection GetElements(string html,string pattern,int startpos=0)
+        static MatchCollection GetMatches(string html,string pattern,int startpos=0)
         {
             Regex regex = new Regex(pattern);
 
