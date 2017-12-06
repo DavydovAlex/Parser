@@ -5,11 +5,6 @@ VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parser", "Parser\Parser.csproj", "{7086CEEB-D8CA-4DB9-8ED0-6232FEC75F2C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9C237413-0088-4A57-B8A4-F3404FA7F83A}"
-	ProjectSection(SolutionItems) = preProject
-		Parser\Classes\HTMLWorker.cs = Parser\Classes\HTMLWorker.cs
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

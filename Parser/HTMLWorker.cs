@@ -49,41 +49,60 @@ namespace Classes
 
         }
     #endregion
+
         /// <summary>
-        /// Get string contaning Html code loaded from file 
+        /// Read file 
         /// </summary>
         /// <param name="fileName"> Path to Html file</param>
         /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        public string OpenHtmlFile(string fileName,Encoding encoding)
+        public string ReadFile(string path,Encoding encoding)
         {
             string result;
-            try
+            using (StreamReader stream = new StreamReader(path, encoding))
             {
-                using (StreamReader stream = new StreamReader(fileName, encoding))
-                {
-                    result = stream.ReadToEnd();
-                }
+                result = stream.ReadToEnd();
             }
-            catch(System.IO.IOException ex)
+            return result;                    
+        }
+        /// <summary>
+        /// Get Html frol local file or via Net
+        /// </summary>
+        /// <param name="URI"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        public string GetHtml(string URI, Encoding encoding)
+        {
+            Uri HtmlAddr = new Uri(URI);
+            string result;
+            if(HtmlAddr.Scheme==Uri.UriSchemeFile)
             {
-
-                result = null;
-                throw new Exception(ex.Message);
-            }            
+                result = ReadFile(URI, encoding);
+            }
+            else
+            {
+                result = GetHtmlViaInternet(URI, encoding);
+            }
             return result;
         }
-
         /// <summary>
         /// Get string containing Html code loaded from site
         /// </summary>
         /// <param name="URL">Source Html code URI</param>
         /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        public string GetHtmlFromURL(string URL,Encoding encoding)
+        public string GetHtmlViaInternet(string URI,Encoding encoding)
         {
-            Uri uri = new Uri(URL);
-            string result = GetHtmlFromURL(uri, encoding);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URI);
+            request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36";
+            request.Referer = "https://www.google.ru/";
+            request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8";
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            string result;
+            using (StreamReader stream = new StreamReader(response.GetResponseStream(), encoding))
+            {
+                result = stream.ReadToEnd();
+            }
             return result;
         }
         /// <summary>
@@ -94,16 +113,8 @@ namespace Classes
         /// <returns></returns>
         public string GetHtmlFromURL(Uri URL, Encoding encoding)
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-            request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36";
-            request.Referer = "https://www.google.ru/";
-            request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8";
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            string result;
-            using (StreamReader stream = new StreamReader(response.GetResponseStream(), encoding))
-            {
-                result = stream.ReadToEnd();
-            }
+            string result = URL.Scheme;
+            //string result = GetHtmlFromURL(strURL, encoding);
             return result;
         }
 
