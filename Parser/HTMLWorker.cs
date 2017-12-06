@@ -28,6 +28,9 @@ namespace Classes
 
         public const string P_SINGLE_TAG = @"<(.|n)*?>(.|n)*?<";
 
+        /// <summary>
+        /// Part of Html from tag to nect open/close tag
+        /// </summary>
         public const string P_HTML_FROM_TAG_TO_TAG= @"<[\s\S]*?>[\s\S]*?(?=<[\s\S]*?>)";
 
         public const string P_TAG_NAME = @"(?<=<[\s/]*?)[a-zA-Z0-9]*?(?=(>| [\s\S]*?>))";
@@ -146,6 +149,42 @@ namespace Classes
         }
 
 
+        /// <summary>
+        /// Резбивает исходный Html файл на список строк от тега до тега
+        /// </summary>
+        /// <param name="Html"></param>
+        /// <returns></returns>
+        /// <example>dvvfefe</example>>
+        public string Split(string html)
+        {
+            string pattern = P_HTML_FROM_TAG_TO_TAG;
+            List<string> result = new List<string>();
+            int currentPosition = 0;
+            string matchedString = "";
+            while (currentPosition <= html.Length)
+            {
+                matchedString = GetMatch(html, pattern, currentPosition).Value;
+                GroupCollection dfv = GetMatch(html, pattern, currentPosition).Groups;
+                if (matchedString == "")
+                    break;
+                currentPosition += matchedString.Length;
+                result.Add(matchedString);
+
+            }
+
+            return result;
+        }
+
+
+        public Match GetMatch(string html, string pattern, int startpos = 0)
+        {
+            Regex regex = new Regex(pattern);//, RegexOptions.Singleline
+            Match result = regex.Match(html, startpos);
+            return result;
+        }
+
+
+
         public void ConvertHtmlToXml(string Html)
         {
             XmlDocument xml = new XmlDocument();
@@ -207,18 +246,12 @@ namespace Classes
             return result;
         }
 
-        public static Match GetElement(string html, string pattern,int startpos=0)
-        {
-            Regex regex = new Regex(pattern,RegexOptions.Singleline);
-            Match result = regex.Match(html,startpos);
-            return result;
-        }
 
 
         public static Encoding GetEncoding(string html)
         {
-            string head = GetElement(html, GetPattern_PAIRED_TAG("head")).Value;/*Знаем что Head только один берем первый элемент и сразу забираем значение*/
-            Match encoding=GetElement(head, P_META);
+            string head = GetMatch(html, GetPattern_PAIRED_TAG("head")).Value;/*Знаем что Head только один берем первый элемент и сразу забираем значение*/
+            Match encoding=GetMatch(head, P_META);
             Encoding result;
             if (encoding.Length == 0)
                 result = Encoding.UTF8;
@@ -232,6 +265,13 @@ namespace Classes
             string pattern = @"<\s*?" + tagName + @"[^>]*?>[\s\S]*?</\s*?" + tagName + @"\s*?>"; //@"<(\s)*" + tagName + @".*>(.|\n)*?</(\s)*" + tagName + @"(\s)*>";
             return pattern;
         }
+
+        /// <summary>
+        /// Заменено Split()
+        /// </summary>
+        /// <param name="html"></param>
+        /// <param name="pattern"></param>
+        /// <returns></returns>
         public static List<string> SplitHtml(string html,string pattern)
         {
             List<string> result = new List<string>();
@@ -239,8 +279,8 @@ namespace Classes
             string buf = "";
             while (currentPosition<=html.Length)
             {
-                buf = GetElement(html, pattern, currentPosition).Value;
-                GroupCollection dfv= GetElement(html, pattern, currentPosition).Groups;
+                buf = GetMatch(html, pattern, currentPosition).Value;
+                GroupCollection dfv= GetMatch(html, pattern, currentPosition).Groups;
 
                 if (buf == "")
                     break;
@@ -268,7 +308,7 @@ namespace Classes
             int pos = 0;
             foreach (string str in splitedHtml)
             {
-                tag.Name = GetElement(str, P_TAG_NAME).Value;
+                tag.Name = GetMatch(str, P_TAG_NAME).Value;
                 tag.Position = pos;
 
                 if (Regex.IsMatch(str, P_SINGLE_CLOSING_TAG))
@@ -340,7 +380,7 @@ namespace Classes
             string attributes;
             if (!Regex.IsMatch(html, @"</[^>]>"))
             {
-                string subStr = GetElement(html, @"(?<=<\s*?[a-zA-Z0-9]*?\s)[^>]*?(?=>)").Value;
+                string subStr = GetMatch(html, @"(?<=<\s*?[a-zA-Z0-9]*?\s)[^>]*?(?=>)").Value;
                 int initiallyLength = subStr.Length;
                 int strLen = 0;
                 
