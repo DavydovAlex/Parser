@@ -29,19 +29,29 @@ namespace Classes
         public const string P_SINGLE_TAG = @"<(.|n)*?>(.|n)*?<";
 
         /// <summary>
-        /// Part of Html from tag to nect open/close tag
+        /// Part of Html from tag to next open/close tag
         /// </summary>
         public const string P_HTML_FROM_TAG_TO_TAG= @"<[\s\S]*?>[\s\S]*?(?=<[\s\S]*?>)";
 
+
         public const string P_TAG_NAME = @"(?<=<[\s/]*?)[a-zA-Z0-9]*?(?=(>| [\s\S]*?>))";
 
+        /// <summary>
+        /// Get tag with format &lt;tag /&gt;
+        /// </summary>
         public const string P_SINGLE_CLOSING_TAG = @"(?<=<[\s]*?)[a-zA-Z0-9]*?(?=(/>| [\s\S]*?/>))";
 
+        /// <summary>
+        /// Get tag with format &lt;tag .....&gt;
+        /// </summary>
         public const string P_OPEN_TAG_NAME= @"(?<=<[\s]*?)[a-zA-Z0-9]*?(?=(>| [\s\S]*?>))";
 
+        /// <summary>
+        /// Get tag with format &lt;/tag&gt;
+        /// </summary>
         public const string P_CLOSING_TAG_NAME = @"(?<=<[\s]*?)/[a-zA-Z0-9]*?(?=(>|[\s]*?>))";
 
-        //public static string P_VALID_ATTRIBUTE_CHECKING = @"<>";
+        public const string P_VALUE = @"(?<=<[^>]+?>)[\s\S]*?";
 
         #endregion
 
@@ -152,10 +162,10 @@ namespace Classes
         /// <summary>
         /// Резбивает исходный Html файл на список строк от тега до тега
         /// </summary>
-        /// <param name="Html"></param>
+        /// <param name="html"></param>
         /// <returns></returns>
         /// <example>dvvfefe</example>>
-        public string Split(string html)
+        public List<string> Split(string html)
         {
             string pattern = P_HTML_FROM_TAG_TO_TAG;
             List<string> result = new List<string>();
@@ -163,40 +173,87 @@ namespace Classes
             string matchedString = "";
             while (currentPosition <= html.Length)
             {
-                matchedString = GetMatch(html, pattern, currentPosition).Value;
-                GroupCollection dfv = GetMatch(html, pattern, currentPosition).Groups;
+                matchedString = GetMatch(html, pattern, currentPosition);
                 if (matchedString == "")
                     break;
                 currentPosition += matchedString.Length;
                 result.Add(matchedString);
 
             }
-
             return result;
         }
 
-
-        public Match GetMatch(string html, string pattern, int startpos = 0)
+   
+        /// <summary>
+        /// Ищет совпадение по заданному паттерну
+        /// </summary>
+        /// <param name="html"></param>
+        /// <param name="pattern"></param>
+        /// <param name="startpos"></param>
+        /// <returns></returns>
+        private string GetMatch(string html, string pattern, int startpos = 0)
         {
             Regex regex = new Regex(pattern);//, RegexOptions.Singleline
-            Match result = regex.Match(html, startpos);
+            string result = regex.Match(html, startpos).Value;
             return result;
         }
 
 
 
-        public void ConvertHtmlToXml(string Html)
+        private List<Tag> GetTagList(string html)
         {
-            XmlDocument xml = new XmlDocument();
-            try
+            List<string> splitedHtml = Split(html);
+            List<Tag> splitedToTags = new List<Tag>();
+            int tagPos = 0;
+            foreach (string elem in splitedHtml)
             {
-                 xml.LoadXml(Html);
+                splitedToTags.Add(FillTagAttributes(elem));
+                tagPos++;
             }
-            catch(Exception e)
-            {
-                string err = e.Message;
-            }
-            
+            return splitedToTags;
+        }
+
+
+        /// <summary>
+        /// Парсим строку, получаем: Name,Status, Value
+        /// </summary>
+        /// <param name="tagToTag"></param>
+        /// <returns></returns>
+        private Tag FillTagAttributes(string tagToTag)
+        {
+            Tag tag = new Tag();
+            tag.Name = GetMatch(tagToTag, P_TAG_NAME);
+            tag.Status = GetTagStatus(tagToTag);
+            tag.Value = GetMatch(tagToTag, P_VALUE);
+            return tag;
+        }
+
+
+        /// <summary>
+        /// Получаем статус тега
+        /// </summary>
+        /// <remarks>
+        /// Варианты статуса:
+        /// 0 - закрывающий тег </tag>;
+        /// 1 - открывающий тег <tag>;
+        /// 2 - одиночный закрывающийся тег <tag />.
+        /// </remarks>
+        /// <param name="tagToTag"></param>
+        /// <returns></returns>
+        private int GetTagStatus(string tagToTag)
+        {
+            int result=-1;
+
+            if (Regex.IsMatch(tagToTag, P_SINGLE_CLOSING_TAG))//формат <tag />
+                result = 2;
+            else if (Regex.IsMatch(tagToTag, P_OPEN_TAG_NAME))//формат <tag>
+                result = 1;
+            else if (Regex.IsMatch(tagToTag, P_CLOSING_TAG_NAME)) //формат </tag>
+                 result = 0;
+            if (result == -1)
+                throw new Exception("Can't define tag status");
+
+            return result;
         }
 
 
@@ -230,6 +287,7 @@ namespace Classes
             MatchCollection result = regex.Matches(html);
             return result;
         }
+
         public static MatchCollection RemoveElement(ref string changedHtml,string pattern)
         {
             MatchCollection result = GetElements(changedHtml, pattern);
@@ -248,15 +306,15 @@ namespace Classes
 
 
 
-        public static Encoding GetEncoding(string html)
+        public Encoding GetEncoding(string html)
         {
-            string head = GetMatch(html, GetPattern_PAIRED_TAG("head")).Value;/*Знаем что Head только один берем первый элемент и сразу забираем значение*/
-            Match encoding=GetMatch(head, P_META);
+            string head = GetMatch(html, GetPattern_PAIRED_TAG("head"));/*Знаем что Head только один берем первый элемент и сразу забираем значение*/
+            string encoding=GetMatch(head, P_META);
             Encoding result;
             if (encoding.Length == 0)
                 result = Encoding.UTF8;
             else
-                result= Encoding.GetEncoding(encoding.Value);
+                result= Encoding.GetEncoding(encoding);
             return result;
 
         }
@@ -266,32 +324,7 @@ namespace Classes
             return pattern;
         }
 
-        /// <summary>
-        /// Заменено Split()
-        /// </summary>
-        /// <param name="html"></param>
-        /// <param name="pattern"></param>
-        /// <returns></returns>
-        public static List<string> SplitHtml(string html,string pattern)
-        {
-            List<string> result = new List<string>();
-            int currentPosition = 0;
-            string buf = "";
-            while (currentPosition<=html.Length)
-            {
-                buf = GetMatch(html, pattern, currentPosition).Value;
-                GroupCollection dfv= GetMatch(html, pattern, currentPosition).Groups;
 
-                if (buf == "")
-                    break;
-                currentPosition += buf.Length;
-                //string show = html.Substring(currentPosition, 20);
-                result.Add(buf);
-                
-            }
-
-            return result;
-        }
 
         /// <summary>
         /// Переписать без использования splitedHtml (подумать) т.к. этот список создается не в одной функции(наверно замедлит работу)
@@ -299,16 +332,16 @@ namespace Classes
         /// </summary>
         /// <param name="html"></param>
         /// <returns></returns>
-        public static List<Tag> FindSingleTags(string html)
+        public  List<Tag> FindSingleTags(string html)
         {
-            List<string> splitedHtml = SplitHtml(html, P_HTML_FROM_TAG_TO_TAG);
+            List<string> splitedHtml = Split(html);
             Stack<Tag> stack = new Stack<Tag>();         
             List<Tag> tags = new List<Tag>();
             Tag tag = new Tag();
             int pos = 0;
             foreach (string str in splitedHtml)
             {
-                tag.Name = GetMatch(str, P_TAG_NAME).Value;
+                tag.Name = GetMatch(str, P_TAG_NAME);
                 tag.Position = pos;
 
                 if (Regex.IsMatch(str, P_SINGLE_CLOSING_TAG))
@@ -354,9 +387,9 @@ namespace Classes
             return tags;
         }
 
-        public static string  ComplementSingleTags(string html)
+        public  string  ComplementSingleTags(string html)
         {
-            List<string> SplitedHtml = SplitHtml(html,P_HTML_FROM_TAG_TO_TAG);
+            List<string> SplitedHtml = Split(html);
             List<Tag> singleTags = FindSingleTags(html);
             foreach(Tag tg in singleTags)
             {
@@ -375,12 +408,12 @@ namespace Classes
             return result;
         }
 
-        public static void CheckAttributes(string html)
+        public  void CheckAttributes(string html)
         {
             string attributes;
             if (!Regex.IsMatch(html, @"</[^>]>"))
             {
-                string subStr = GetMatch(html, @"(?<=<\s*?[a-zA-Z0-9]*?\s)[^>]*?(?=>)").Value;
+                string subStr = GetMatch(html, @"(?<=<\s*?[a-zA-Z0-9]*?\s)[^>]*?(?=>)");
                 int initiallyLength = subStr.Length;
                 int strLen = 0;
                 
@@ -408,15 +441,9 @@ namespace Classes
         public string Name;
         public int Position;
         public int Status;
-        
+        public string Value;
 
     }
 
-    //public static class ExtRegex
-    //{
-    //    public static bool IsMatch(this Regex regex,string input,string pattern,int startPos)
-    //    {
-    //        return false;
-    //    }
-    //}
+
 }
