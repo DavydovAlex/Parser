@@ -85,6 +85,19 @@ namespace Classes
             }
             return result;
         }
+        public string GetHtml(Uri URI, Encoding encoding)
+        {
+            string result;
+            if (URI.Scheme == Uri.UriSchemeFile)
+            {
+                result = ReadFile(URI.AbsolutePath, encoding);
+            }
+            else
+            {
+                result = GetHtmlViaInternet(URI, encoding);
+            }
+            return result;
+        }
         /// <summary>
         /// Get string containing Html code loaded from site
         /// </summary>
@@ -111,10 +124,10 @@ namespace Classes
         /// <param name="URL"></param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        public string GetHtmlFromURL(Uri URL, Encoding encoding)
+        public string GetHtmlViaInternet(Uri URI, Encoding encoding)
         {
-            string result = URL.Scheme;
-            //string result = GetHtmlFromURL(strURL, encoding);
+            string strURI = URI.AbsoluteUri;
+            string result = GetHtmlViaInternet(strURI, encoding);
             return result;
         }
 

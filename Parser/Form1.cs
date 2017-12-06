@@ -22,8 +22,8 @@ namespace Parser
             HTMLWorker wrk = new HTMLWorker();
             try
             {
-                Uri e = new Uri(@"https://www.google.com");//@"D:\1.txt"
-                string str = wrk.GetHtml(@"D:\chm\1234.htm", Encoding.UTF8);
+                Uri e = new Uri(@"https://www.google.com");//@"D:\1.txt"   @"https://www.google.com"   @"D:\chm\1234.htm"
+                string str = wrk.GetHtml(e, Encoding.UTF8);
             }
             catch (Exception ex)
             {
