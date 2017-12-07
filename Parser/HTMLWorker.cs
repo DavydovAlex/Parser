@@ -293,8 +293,7 @@ namespace Classes
             Tag tag = new Tag();
             int pos = 0;
             foreach (string str in splitedHtml)
-            {
-                
+            {               
                 tag = FillTagAttributes(str);
                 tag.Position = pos;
 
@@ -305,7 +304,6 @@ namespace Classes
                     continue;
                 }
                     
-
                 if (stack.Count != 0)
                 {
                     //Удалить элемент из верхушки если пришедший тег имеет такое же имя, но является закрывающим
