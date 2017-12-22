@@ -56,13 +56,42 @@ namespace Classes
         #endregion
 
 
+        public string Html;
+        public Uri URI;
+        Encoding encoding;
+
         #region Constructors
+
         public HTMLWorker()
         {
-
         }
-    #endregion
 
+        public HTMLWorker(string URI)
+        {
+            Html = GetHtml(URI, encoding);
+            this.URI = new Uri(URI);
+        }
+
+        public HTMLWorker(Uri URI)
+        {
+            Html = GetHtml(URI, encoding);
+            this.URI = URI;
+        }
+    
+        public HTMLWorker(string URI, Encoding encoding):this(URI)
+        {
+            this.encoding = encoding;        
+        }
+
+        public HTMLWorker(Uri URI, Encoding encoding) : this(URI)
+        {
+            this.encoding = encoding;
+        }
+
+
+        #endregion
+
+        #region Completed  functions
 
         /// <summary>
         /// Read local file 
@@ -70,7 +99,7 @@ namespace Classes
         /// <param name="fileName"> Path to Html file</param>
         /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        private string ReadFile(string path,Encoding encoding)
+        private static string ReadFile(string path,Encoding encoding)
         {
             string result;
             using (StreamReader stream = new StreamReader(path, encoding))
@@ -87,7 +116,7 @@ namespace Classes
         /// <param name="URI"></param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        public string GetHtml(string URI, Encoding encoding)
+        public static string GetHtml(string URI, Encoding encoding)
         {
             Uri HtmlAddr = new Uri(URI);
             string result;
@@ -109,7 +138,7 @@ namespace Classes
         /// <param name="URI"></param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        public string GetHtml(Uri URI, Encoding encoding)
+        public static string GetHtml(Uri URI, Encoding encoding)
         {
             string result;
             if (URI.Scheme == Uri.UriSchemeFile)
@@ -130,7 +159,7 @@ namespace Classes
         /// <param name="URL">URI</param>
         /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        private string GetHtmlViaInternet(string URI,Encoding encoding)
+        private static string GetHtmlViaInternet(string URI,Encoding encoding)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URI);
             request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36";
@@ -145,18 +174,19 @@ namespace Classes
             return result;
         }
 
-
         /// <summary>
         /// Get string containing Html code loaded from site
         /// </summary>
         /// <param name="URL">URI</param>
         /// <param name="encoding"> Encoding </param>
         /// <returns></returns>
-        private string GetHtmlViaInternet(Uri URI, Encoding encoding)
+        private static string GetHtmlViaInternet(Uri URI, Encoding encoding)
         {
             string result = GetHtmlViaInternet(URI.AbsoluteUri, encoding);
             return result;
         }
+
+        #endregion
 
 
         /// <summary>
@@ -196,6 +226,22 @@ namespace Classes
                 string buf = Regex.Replace(elem, pattern, "");
                 result.Add(buf);
             }
+            return result;
+        }
+
+        public string GetClass(string html)
+        {
+            string result = "";
+            string pattern = @"(?<=(<[\s]*?[a-zA-Z0-9]+?[\s\S]+?class[\s]*?=)[\s]*?)[\s\S]+?(?=((\b[\S]+?[\s]*?=)|>|\>))";
+            result = Regex.Match(html, pattern).ToString();
+            return result;
+        }
+
+        public string GetId(string html)
+        {
+            string result = "";
+            string pattern = @"(?<=(<[\s]*?[a-zA-Z0-9]+?[\s\S]+?id[\s]*?=)[\s]*?)[\s\S]+?(?=((\b[\S]+?[\s]*?=)|>|\>))";
+            result = Regex.Match(html, pattern).ToString();
             return result;
         }
 
@@ -293,8 +339,7 @@ namespace Classes
             Tag tag = new Tag();
             int pos = 0;
             foreach (string str in splitedHtml)
-            {
-                
+            {               
                 tag = FillTagAttributes(str);
                 tag.Position = pos;
 
@@ -305,7 +350,6 @@ namespace Classes
                     continue;
                 }
                     
-
                 if (stack.Count != 0)
                 {
                     //Удалить элемент из верхушки если пришедший тег имеет такое же имя, но является закрывающим
@@ -361,7 +405,8 @@ namespace Classes
             return result;
         }
 
-        static MatchCollection GetMatches(string html,string pattern,int startpos=0)
+
+        public MatchCollection GetMatches(string html,string pattern,int startpos=0)
         {
             Regex regex = new Regex(pattern);
             MatchCollection result = regex.Matches(html, startpos);
@@ -461,10 +506,12 @@ namespace Classes
         {
             List<string> SplitedHtml = Split(html);
             List<Tag> singleTags = FindSingleTags(html);
-            foreach(Tag tg in singleTags)
-            {
-                SplitedHtml[tg.Position] = SplitedHtml[tg.Position].Replace(">", "/>"); //"</" + tg.Name + ">";
-            }
+
+                foreach (Tag tg in singleTags)
+                {
+                    SplitedHtml[tg.Position] = SplitedHtml[tg.Position].Replace(">", "/>"); //"</" + tg.Name + ">";
+                }
+
             string result = CompileHtml(SplitedHtml);
             return result;
         }
@@ -507,12 +554,10 @@ namespace Classes
 
     struct Tag
     {
-        //string _name;
         public string Name;
         public int Position;
         public int Status;
         public string Value;
-
     }
 
 
