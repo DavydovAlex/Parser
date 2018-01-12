@@ -186,6 +186,13 @@ namespace Classes
             return result;
         }
 
+        public static void SaveFile(string path,string html)
+        {
+            using (StreamWriter stream=new StreamWriter(path))
+            {
+                stream.WriteLine(html);
+            }
+        }
         #endregion
 
 
@@ -229,19 +236,59 @@ namespace Classes
             return result;
         }
 
-        public string GetClass(string html)
-        {
-            string result = "";
-            string pattern = @"(?<=(<[\s]*?[a-zA-Z0-9]+?[\s\S]+?class[\s]*?=)[\s]*?)[\s\S]+?(?=((\b[\S]+?[\s]*?=)|>|\>))";
-            result = Regex.Match(html, pattern).ToString();
-            return result;
-        }
+        //public string GetClass(string html)
+        //{
+        //    string result = "";
+        //    string pattern = @"(?<=(<[\s]*?[a-zA-Z0-9]+?[\s\S]+?\bclass[\s]*?=)[\s]*?)[\s\S]+?(?=((\b[\S]+?[\s]*?=)|>|\>))";
+        //    result = Regex.Match(html, pattern).ToString();
+        //    result = Regex.Replace(result,@"""",@"");
+        //    result = result.Trim(new char[] {' '});
+        //    return result;
+        //}
 
-        public string GetId(string html)
+        //public string GetId(string html)
+        //{
+        //    string result = "";
+        //    string pattern = @"(?<=(<[\s]*?[a-zA-Z0-9]+?[\s\S]+?\bid[\s]*?=)[\s]*?)[\s\S]+?(?=((\b[\S]+?[\s]*?=)|>|\>))";
+        //    result = Regex.Match(html, pattern).ToString();
+        //    result = Regex.Replace(result, @"""", @"");
+        //    result = result.Trim(new char[] { ' ' });
+        //    return result;
+        //}
+
+        public string LeadAttributesToXML(string tagToTag)
         {
             string result = "";
-            string pattern = @"(?<=(<[\s]*?[a-zA-Z0-9]+?[\s\S]+?id[\s]*?=)[\s]*?)[\s\S]+?(?=((\b[\S]+?[\s]*?=)|>|\>))";
-            result = Regex.Match(html, pattern).ToString();
+            MatchCollection attrs = Regex.Matches(tagToTag, @"\b[a-zA-Z0-9]+?[\s]*?=[\s]*?[\s\S]+?(?=(([\s]+?[\S]+?[\s]*?=)|>|\>))");
+            result = Regex.Match(tagToTag, @"<[\s]*?[a-zA-Z0-9]+").Value + " ";
+            foreach(Match str in attrs)
+            {
+                string buf= str.Value;
+                int quotes = new Regex(@"""").Matches(buf).Count;
+                if(quotes==0)
+                {
+                    buf = Regex.Replace(buf, "=", @"=""");
+                    buf+=@"""";
+                }
+                else if(quotes==1)
+                {
+                    if(buf.TrimEnd(' ').Last()=='"')
+                    {
+                        buf = Regex.Replace(buf, "=", @"=""");
+                    }
+                    else
+                    {
+                        buf += @""" ";
+                    }
+                }
+                else if(quotes == 2)
+                {
+                    buf = buf.Substring(0, buf.LastIndexOf('"') + 1);
+                }
+                result += buf+" ";
+            }
+            //result += attrs.Count.ToString();
+            result+= Regex.Match(tagToTag, @"(\>|>[\s\S]+)").Value + " ";
             return result;
         }
 
@@ -289,7 +336,7 @@ namespace Classes
             {
                 Name = GetMatch(tagToTag, P_TAG_NAME),
                 Status = GetTagStatus(tagToTag),
-                Value = GetMatch(tagToTag, P_VALUE)
+                //Value = GetMatch(tagToTag, P_VALUE)
             };
             return tag;
         }
@@ -331,9 +378,10 @@ namespace Classes
         /// </summary>
         /// <param name="html"></param>
         /// <returns></returns>
-        public List<Tag> FindSingleTagsT(string html)
+        public List<Tag> FindSingleTags(string html)
         {
             List<string> splitedHtml = Split(html);
+            //List<string> CorrectAttributes = new List<string>();
             Stack<Tag> stack = new Stack<Tag>();
             List<Tag> tags = new List<Tag>();//Список одиночных тегов
             Tag tag = new Tag();
@@ -447,60 +495,60 @@ namespace Classes
         /// </summary>
         /// <param name="html"></param>
         /// <returns></returns>
-        public  List<Tag> FindSingleTags(string html)
-        {
-            List<string> splitedHtml = Split(html);
-            Stack<Tag> stack = new Stack<Tag>();         
-            List<Tag> tags = new List<Tag>();//Список одиночных тегов
-            Tag tag = new Tag();
-            int pos = 0;
-            foreach (string str in splitedHtml)
-            {
-                tag.Name = GetMatch(str, P_TAG_NAME);
-                tag.Position = pos;
+        //public  List<Tag> FindSingleTags(string html)
+        //{
+        //    List<string> splitedHtml = Split(html);
+        //    Stack<Tag> stack = new Stack<Tag>();         
+        //    List<Tag> tags = new List<Tag>();//Список одиночных тегов
+        //    Tag tag = new Tag();
+        //    int pos = 0;
+        //    foreach (string str in splitedHtml)
+        //    {
+        //        tag.Name = GetMatch(str, P_TAG_NAME);
+        //        tag.Position = pos;
 
-                if (Regex.IsMatch(str, P_SINGLE_CLOSING_TAG))
-                {
-                    tag.Status = 2;
-                    pos++;
-                    continue;//если тег имеет формат <tag /> нет необходимости выполнять проверки
-                }
-                else if (Regex.IsMatch(str, P_OPEN_TAG_NAME))                
-                    tag.Status = 1;              
-                else if(Regex.IsMatch(str, P_CLOSING_TAG_NAME))
-                    tag.Status = 0;
+        //        if (Regex.IsMatch(str, P_SINGLE_CLOSING_TAG))
+        //        {
+        //            tag.Status = 2;
+        //            pos++;
+        //            continue;//если тег имеет формат <tag /> нет необходимости выполнять проверки
+        //        }
+        //        else if (Regex.IsMatch(str, P_OPEN_TAG_NAME))                
+        //            tag.Status = 1;              
+        //        else if(Regex.IsMatch(str, P_CLOSING_TAG_NAME))
+        //            tag.Status = 0;
 
-                if (stack.Count != 0)
-                {
-                    //Удалить элемент из верхушки если пришедший тег имеет такое же имя, но является закрывающим
-                    if (stack.Peek().Name == tag.Name && stack.Peek().Status==1 && tag.Status==0)
-                    {
-                        stack.Pop();
-                    }
-                    //Если пришедший тег закрывающий и имеет другое имя, значит тег в стеке одиночный               
-                    else if (stack.Peek().Name != tag.Name && tag.Status==0)
-                    {
-                        //Проверяем в цикле, так как может быть несколько вложенных тегов и они не удалятся
-                        while (stack.Peek().Name != tag.Name)
-                        {
-                            tags.Add(stack.Peek());
-                            stack.Pop();                        
-                        } 
-                        if (stack.Peek().Name == tag.Name)
-                            stack.Pop();
-                        else
-                            stack.Push(tag);
-                    }
-                    else
-                        stack.Push(tag);
-                }
-                else
-                    stack.Push(tag);
+        //        if (stack.Count != 0)
+        //        {
+        //            //Удалить элемент из верхушки если пришедший тег имеет такое же имя, но является закрывающим
+        //            if (stack.Peek().Name == tag.Name && stack.Peek().Status==1 && tag.Status==0)
+        //            {
+        //                stack.Pop();
+        //            }
+        //            //Если пришедший тег закрывающий и имеет другое имя, значит тег в стеке одиночный               
+        //            else if (stack.Peek().Name != tag.Name && tag.Status==0)
+        //            {
+        //                //Проверяем в цикле, так как может быть несколько вложенных тегов и они не удалятся
+        //                while (stack.Peek().Name != tag.Name)
+        //                {
+        //                    tags.Add(stack.Peek());
+        //                    stack.Pop();                        
+        //                } 
+        //                if (stack.Peek().Name == tag.Name)
+        //                    stack.Pop();
+        //                else
+        //                    stack.Push(tag);
+        //            }
+        //            else
+        //                stack.Push(tag);
+        //        }
+        //        else
+        //            stack.Push(tag);
        
-                pos++;
-            }
-            return tags;
-        }
+        //        pos++;
+        //    }
+        //    return tags;
+        //}
 
         public  string  ComplementSingleTags(string html)
         {
