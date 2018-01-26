@@ -31,34 +31,46 @@ namespace Parser
                 wrk.RemoveBlock(ref str, HTMLWorker.GetPattern_PAIRED_TAG("style"));
                 wrk.RemoveBlock(ref str, HTMLWorker.GetPattern_PAIRED_TAG("head"));
                 wrk.RemoveBlock(ref str, HTMLWorker.P_COMMENT);
-                //string table = wrk.GetMatches(str, HTMLWorker.GetPattern_PAIRED_TAG("table"))[0].Value;
-                List<string> dev = wrk.Split(str);
-                List<string> classes = new List<string>();
-                //foreach(string row in dev)
-                //{
-                //    string buf = wrk.GetClass(row);
-                //    classes.Add(buf);
-                
-                //}
 
-                List<string> atttr = new List<string>();
-                foreach (string row in dev)
+                
+                List<Tag> tags = wrk.Split(str);
+                foreach (Tag row in tags)
                 {
-                    string buf = wrk.LeadAttributesToXML(row);
-                    atttr.Add(buf);
+                    string tagToTag = row.Value;
+                    
+                    Dictionary<string, string> ssss = wrk.GetAttributes(tagToTag);
 
                 }
 
-                List<string> id = new List<string>();
+                //string table = wrk.GetMatches(str, HTMLWorker.GetPattern_PAIRED_TAG("table"))[0].Value;
+                //List<string> dev = wrk.Split(str);
+                //List<string> classes = new List<string>();
+
+                ////foreach(string row in dev)
+                ////{
+                ////    string buf = wrk.GetClass(row);
+                ////    classes.Add(buf);
+
+                ////}
+
+                //List<string> atttr = new List<string>();
                 //foreach (string row in dev)
                 //{
-                //    string buf = wrk.GetId(row);
-                //    id.Add(buf);
+                //    string buf = wrk.LeadAttributesToXML(row);
+                //    atttr.Add(buf);
+
                 //}
-                //List<string> dewf = wrk.RemoveAtributes(dev);
-                List<Classes.Tag> rfrf = wrk.FindSingleTags(str);
-                //List<Tag> dcv = wrk.GetTagList(str);
-                // string res = wrk.ComplementSingleTags(table);
+
+                //List<string> id = new List<string>();
+                ////foreach (string row in dev)
+                ////{
+                ////    string buf = wrk.GetId(row);
+                ////    id.Add(buf);
+                ////}
+                ////List<string> dewf = wrk.RemoveAtributes(dev);
+                //List<Classes.Tag> rfrf = wrk.FindSingleTags(str);
+                ////List<Tag> dcv = wrk.GetTagList(str);
+                //// string res = wrk.ComplementSingleTags(table);
 
             }
             catch (Exception ex)
